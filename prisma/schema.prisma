@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String @id @default(cuid())
+  email         String @unique
+  name          String
+  username      String @unique
+  passwordHash  String
+  createdAt     DateTime @default(now())
+
+  memberships   GroupMembership[]
+  dailyReads    DailyRead[]
+}
+
+model Group {
+  id          String @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  memberships GroupMembership[]
+  dailyReads DailyRead[]
+}
+
+model GroupMembership {
+  id        String @id @default(cuid())
+  userId    String
+  groupId   String
+  joinedAt  DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+}
+
+model DailyRead {
+  id        String @id @default(cuid())
+  userId    String
+  groupId   String
+  imageUrl  String
+  caption   String?
+  pagesRead String?
+  readAt    DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([userId, groupId, readAt])
+}
